@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f4">
+  <title>间尺 | 房间布局</title>
+  <style>
+    :root { --ink:#263531; --muted:#708079; --line:#dce3df; --green:#226b54; --paper:#f3f5f4; --red:#ad453a; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:"Bahnschrift","Microsoft YaHei",sans-serif; font-size:14px; letter-spacing:0; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid #83bca6; outline-offset:3px; }
+    header { min-height:82px; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line); background:#fff; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .brand-mark { width:34px; height:34px; border:2px solid var(--green); position:relative; }
+    .brand-mark:before { content:""; position:absolute; inset:8px -5px -5px 8px; border:2px solid var(--green); background:#fff; }
+    h1 { margin:0; font-size:24px; font-family:"STSong","SimSun",serif; font-weight:600; }
+    .brand small { display:block; margin-top:5px; font-size:10px; color:var(--muted); }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid var(--line); border-radius:5px; background:#fff; color:var(--ink); }
+    button:hover:not(:disabled) { background:#edf4f0; border-color:#9db8ab; }
+    button:disabled { opacity:.35; cursor:default; }
+    .primary { background:var(--green); color:#fff; border-color:var(--green); }
+    .primary:hover:not(:disabled) { background:#17533f; color:#fff; }
+    .icon { width:36px; padding:8px; }
+    button svg { width:17px; height:17px; flex-shrink:0; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    main { display:grid; grid-template-columns:260px minmax(0,1fr) 260px; min-height:calc(100vh - 119px); }
+    aside { background:#fff; padding:24px 22px; }
+    .left { border-right:1px solid var(--line); }
+    .right { border-left:1px solid var(--line); }
+    .section-title { display:flex; align-items:center; justify-content:space-between; margin:0 0 18px; font-size:13px; font-weight:600; }
+    .section-title small { font-size:10px; font-weight:400; color:var(--muted); }
+    .room-info { border-bottom:1px solid var(--line); padding-bottom:22px; margin-bottom:24px; }
+    .room-size { font-size:24px; font-variant-numeric:tabular-nums; margin:0 0 7px; }
+    .muted { color:var(--muted); font-size:12px; line-height:1.7; }
+    .furniture-list { display:grid; gap:10px; }
+    .furniture-option { padding:12px; min-height:83px; justify-content:flex-start; text-align:left; width:100%; border-radius:6px; }
+    .furniture-option[aria-pressed="true"] { background:#edf5f0; border-color:var(--green); box-shadow:inset 3px 0 var(--green); }
+    .swatch { flex:0 0 44px; height:44px; display:grid; place-items:center; border-radius:4px; }
+    .swatch svg { width:28px; height:28px; }
+    .item-copy { flex:1; min-width:0; }
+    .item-copy strong { display:block; font-size:13px; margin-bottom:6px; }
+    .item-copy small { color:var(--muted); font-size:11px; }
+    .legend { border-top:1px solid var(--line); padding-top:20px; margin-top:24px; display:grid; gap:12px; font-size:11px; color:var(--muted); }
+    .legend span { display:flex; align-items:center; gap:9px; }
+    .legend i { width:12px; height:12px; border:1px solid #b8d6da; background:#e6f3f5; }
+    .legend .door-key { border:1px dashed #ae9673; background:#faf1de; }
+    .stage { min-width:0; display:flex; flex-direction:column; background-image:radial-gradient(#cdd7d1 .7px,transparent .7px); background-size:18px 18px; }
+    .stage-toolbar { min-height:63px; padding:12px 22px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .stage-title { font-size:12px; font-weight:600; }
+    .stage-title small { display:block; margin-top:5px; font-size:10px; color:var(--muted); font-weight:400; }
+    .switch { display:flex; align-items:center; gap:6px; font-size:11px; white-space:nowrap; }
+    input[type="checkbox"] { accent-color:var(--green); width:15px; height:15px; }
+    .drawing { flex:1; display:flex; align-items:center; justify-content:center; padding:0 14px 10px; min-height:510px; }
+    #plan { width:100%; height:min(72vh,780px); min-height:490px; overflow:visible; user-select:none; -webkit-user-select:none; }
+    #plan text { font-family:"Bahnschrift","Microsoft YaHei",sans-serif; pointer-events:none; }
+    .furniture { cursor:grab; touch-action:none; outline:none; }
+    .furniture:active { cursor:grabbing; }
+    .furniture:focus-visible .footprint { stroke:#226b54; stroke-width:20; }
+    .dimension { fill:none; stroke:#85968c; stroke-width:5; }
+    .dim-text { font-size:75px; fill:#64756b; paint-order:stroke; stroke:#f3f5f4; stroke-width:22px; stroke-linejoin:round; }
+    .item-dim { font-size:61px; fill:#385549; }
+    .stage-footer { min-height:48px; padding:12px 22px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:12px; font-size:11px; color:var(--muted); background:#f8faf8; }
+    .selection-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+    h2 { font-size:21px; margin:0; font-weight:500; }
+    .tag { color:var(--green); background:#e9f3ed; padding:5px 8px; font-size:10px; border-radius:3px; }
+    .measurements { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+    .measurements span { font-size:11px; color:var(--muted); }
+    .measurements strong { display:block; font-size:20px; font-weight:500; margin-top:8px; }
+    .fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
+    label.field { display:flex; flex-direction:column; gap:8px; color:var(--muted); font-size:11px; min-width:0; }
+    input[type="number"],select { min-width:0; width:100%; padding:10px 8px; color:var(--ink); border:1px solid var(--line); background:#fff; border-radius:4px; }
+    .rotation { width:100%; }
+    .spaced { margin-top:24px; padding-top:22px; border-top:1px solid var(--line); }
+    .clearances { display:grid; grid-template-columns:1fr 1fr; gap:13px; font-size:11px; }
+    .clearances span { color:var(--muted); }
+    .clearances b { display:block; margin-top:5px; font-size:15px; font-weight:500; color:var(--ink); }
+    .wall-gaps { display:grid; gap:12px; font-size:11px; }
+    .wall-gaps > div { display:grid; grid-template-columns:36px minmax(0,1fr); gap:8px; line-height:1.7; }
+    .wall-gaps span { color:var(--muted); }
+    .wall-gaps strong { font-weight:500; overflow-wrap:anywhere; }
+    #warnings { margin-top:18px; color:var(--red); font-size:12px; line-height:1.8; }
+    .valid { color:var(--green); }
+    details { margin-top:26px; border-top:1px solid var(--line); padding-top:18px; }
+    summary { cursor:pointer; font-size:12px; }
+    details .fields { margin-bottom:12px; }
+    .assumption { font-size:10px; line-height:1.8; color:var(--muted); margin:12px 0; }
+    .settings-submit { width:100%; }
+    footer { padding:11px 25px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:12px; font-size:10px; color:var(--muted); background:#fff; }
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 18px; background:#263b31; color:#fff; border-radius:5px; font-size:12px; z-index:10; max-width:90%; }
+    #toast:empty { display:none; }
+    @media(max-width:1100px) { main { grid-template-columns:215px minmax(0,1fr); } .right { grid-column:1/-1; border-left:0; border-top:1px solid var(--line); display:grid; grid-template-columns:1fr 1fr; gap:30px; } .right details { margin-top:0; } aside { padding:20px 16px; } }
+    @media(max-width:640px) { header { padding:16px; align-items:flex-start; } h1 { font-size:22px; } .brand { gap:10px; } .brand small { font-size:9px; } header .actions { max-width:122px; justify-content:flex-end; } #exportButton { width:100%; font-size:11px; min-height:32px; } main { display:flex; flex-direction:column; } .left { border-right:0; padding:18px 16px; } .room-info { display:none; } .furniture-list { grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; } .furniture-option { flex-direction:column; align-items:flex-start; padding:10px; gap:9px; min-height:126px; } .swatch { flex-basis:34px; width:34px; height:34px; } .swatch svg { width:23px; height:23px; } .item-copy small { font-size:10px; } .legend { display:none; } .section-title { margin-bottom:12px; } .drawing { min-height:420px; padding:0 5px; } #plan { min-height:420px; height:480px; } .stage-toolbar { padding:12px 16px; } .stage-footer { padding:12px 16px; font-size:10px; } .right { display:block; padding:22px 20px; } .right details { margin-top:24px; } footer { padding:12px 16px; flex-wrap:wrap; } }
+    @media(max-width:640px) { .furniture-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media(prefers-reduced-motion:no-preference) { main { animation:appear .4s ease-out; } @keyframes appear { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>间尺</h1><small>ROOM PLANNER / 房间布局</small></div></div>
+    <div class="actions">
+      <button id="undoButton" class="icon" title="撤销" aria-label="撤销"><svg viewBox="0 0 24 24"><path d="m9 14-5-5 5-5M4 9h10a6 6 0 0 1 0 12"/></svg></button>
+      <button id="resetButton" class="icon" title="重置布局" aria-label="重置布局"><svg viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg></button>
+      <button id="exportButton" class="primary"><svg viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg>导出平面图</button>
+    </div>
+  </header>
+  <main>
+    <aside class="left">
+      <section class="room-info"><h3 class="section-title">房间 <small>01 / 卧室</small></h3><p class="room-size" id="roomSize"></p><span class="muted" id="roomArea"></span></section>
+      <h3 class="section-title">家具清单 <small id="furnitureCount">5 件</small></h3>
+      <div class="furniture-list" id="furnitureList"></div>
+      <div class="legend"><span><i></i>背面飘窗</span><span><i class="door-key"></i>开门范围</span><span><i style="background:#e2efec;border:1px dashed #498d81"></i>儿童椅活动区</span><span><i style="background:#e5eaf2;border:1px dashed #7287a7"></i>衣柜站立区</span></div>
+    </aside>
+    <section class="stage" aria-label="房间平面图">
+      <div class="stage-toolbar"><div class="stage-title">平面布局 <small id="planSubtitle"></small></div><label class="switch"><input type="checkbox" id="showDimensions" checked>尺寸</label><label class="switch"><input type="checkbox" id="snap" checked>吸附</label></div>
+      <div class="drawing"><svg id="plan" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="房间与家具俯视图"></svg></div>
+      <div class="stage-footer"><span id="layoutStatus" role="status"></span><span>单位 mm · 吸附 50 mm</span></div>
+    </section>
+    <aside class="right">
+      <section>
+        <h3 class="section-title">家具属性 <small>毫米 / mm</small></h3>
+        <div class="selection-heading"><h2 id="selectedName"></h2><span class="tag" id="angleTag"></span></div>
+        <div class="measurements"><label class="field">占地宽度<input id="selectedWidth" type="number" min="100" step="1" required></label><label class="field">占地长度<input id="selectedHeight" type="number" min="100" step="1" required></label></div>
+        <div class="fields"><label class="field">距左墙 X<input id="positionX" type="number" min="0" step="10"></label><label class="field">距上墙 Y<input id="positionY" type="number" min="0" step="10"></label></div>
+        <button class="rotation" id="rotateButton"><svg viewBox="0 0 24 24"><path d="M20 9a8 8 0 1 0 0 8M20 3v6h-6"/></svg>旋转 90°</button>
+        <div id="wardrobeStandingControl" class="spaced" hidden><h3 class="section-title">移门衣柜 <small id="wardrobeFacing"></small></h3><label class="field">柜前站立取衣净空<input id="wardrobeFrontClearance" type="number" min="100" max="1500" step="10"></label><p class="assumption">柜前沿整段柜宽预留站立区，默认深 600 mm；更宽裕可设 800 mm。移门不占平开门扇空间，站立区也不等同额外通道。</p></div>
+        <div id="chairActivityControl" class="spaced" hidden>
+          <h3 class="section-title">儿童椅活动区 <small>布局参考</small></h3>
+          <p id="chairActivitySize" style="margin:0;font-size:19px"></p>
+          <div class="fields"><label class="field">每侧净空<input id="chairSideClearance" type="number" min="0" max="1500" step="10"></label><label class="field">椅后后拉净空<input id="chairBackClearance" type="number" min="0" max="1500" step="10"></label></div>
+          <p class="assumption">椅子占地初设 400 × 400 mm，前方预留 100 mm。按小学生坐下、起身及后拉作布局估算，不是统一人体尺寸标准；座高与桌高需按孩子身高和实物匹配。活动区不含额外通行空间。</p>
+        </div>
+        <div class="spaced"><h3 class="section-title">距墙净距 <small>主体房间</small></h3><div class="clearances" id="clearances"></div></div>
+        <div class="spaced"><h3 class="section-title">空余墙段 <small>mm / 分段</small></h3><div class="wall-gaps" id="wallGaps"></div><p class="assumption" id="curtainGapSummary"></p><p class="assumption">按贴墙柜体计算，扣除窗洞、房门开启区和窗帘预留；衣柜站立区与椅子活动区另行校验。</p></div>
+        <div id="warnings" role="status" aria-live="polite"></div>
+      </section>
+      <details>
+        <summary>房间设置</summary>
+        <p class="assumption">主体房间 2800 × 3200 mm，不含飘窗。窗距左墙 43 cm、距右墙 40 cm，推算窗宽 197 cm。深度未提供，暂设 600 mm，可调整。门设在下侧墙右端，向内开启。</p>
+        <form id="roomForm">
+          <div class="fields">
+            <label class="field">主体宽度<input name="width" type="number" min="2000" max="10000" step="10" required></label>
+            <label class="field">主体长度<input name="height" type="number" min="2000" max="10000" step="10" required></label>
+            <label class="field">窗距左墙<input name="bayLeft" type="number" min="0" max="10000" step="10" required></label>
+            <label class="field">窗距右墙<input name="bayRight" type="number" min="0" max="10000" step="10" required></label>
+            <label class="field">窗宽（自动计算）<input name="bayWidth" type="number" readonly></label>
+            <label class="field">飘窗深度<input name="bay" type="number" min="0" max="3000" step="10" required></label>
+            <label class="field">北面窗帘预留<input name="curtain" type="number" min="0" max="1000" step="10" required></label>
+            <label class="field">门洞总宽（含两侧门框）<input name="door" type="number" min="600" max="2000" step="10" required></label>
+          </div>
+          <label class="field">门所在墙面<select name="doorWall"><option value="bottom">下侧墙 · 靠右</option><option value="right">右侧墙 · 靠下</option></select></label>
+          <p class="assumption">两侧门框各 100 mm，包含在门洞总宽内；总宽 1100 mm 时净宽为 900 mm，门扇及开启区按净宽估算。</p>
+          <p class="assumption">家具初始尺寸：床 129 × 212 cm，书桌 120 × 50 cm，衣柜 140 × 44.2 cm。图上方为北面，窗帘预留带内不可摆放家具。</p>
+          <button type="submit" class="settings-submit">应用房间尺寸</button>
+        </form>
+      </details>
+    </aside>
+  </main>
+  <footer><span id="saveStatus">本地自动保存</span><span>间尺 / ROOM STUDY 01</span></footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const storageKey = 'jianchi-room-v1';
+    const defaults = { room:{width:2800,height:3200,bayLeft:430,bayRight:400,bay:600,curtain:200,door:1100,doorWall:'bottom'}, items:[
+      {id:'bed',name:'床',width:1290,height:2120,x:0,y:200,angle:0,color:'#d8e8de',stroke:'#5d8b71'},
+      {id:'desk',name:'书桌',width:1200,height:500,x:2300,y:200,angle:270,color:'#f1e3c9',stroke:'#aa8750'},
+      {id:'wardrobe',name:'衣柜',width:1400,height:442,x:0,y:2650,angle:0,frontClearance:600,color:'#dce4ef',stroke:'#7287a7'},
+      {id:'cabinet',name:'小柜子',width:500,height:400,x:1200,y:2800,angle:0,color:'#efdbd4',stroke:'#aa7868'},
+      {id:'chair',name:'儿童椅',width:400,height:400,x:1700,y:1300,angle:90,sideClearance:150,backClearance:400,color:'#d6e9e4',stroke:'#498d81'}
+    ]};
+    const clone = value => JSON.parse(JSON.stringify(value));
+    let state = clone(defaults);
+    let selectedId = 'bed';
+    let history = [];
+    let drag = null;
+    let saveAvailable = true;
+    let toastTimer;
+    const byId = id => document.getElementById(id);
+    const plan = byId('plan');
+    const footprint = item => item.angle % 180 ? {width:item.height,height:item.width} : {width:item.width,height:item.height};
+    const fits = (item,room=state.room) => {
+      const size = footprint(item);
+      return size.width <= room.width && size.height <= room.height-room.curtain;
+    };
+    const current = () => state.items.find(item => item.id === selectedId);
+    const fmt = value => Math.round(value).toLocaleString('en-US');
+    const clamp = (value,min,max) => Math.min(Math.max(value,min),max);
+    const snapshot = () => JSON.stringify(state);
+    function remember(previous) {
+      if (previous === snapshot()) return;
+      history.push(previous);
+      if (history.length > 50) history.shift();
+    }
+    function contain(item) {
+      const size = footprint(item);
+      item.x = clamp(Math.round(item.x),0,state.room.width-size.width);
+      item.y = clamp(Math.round(item.y),state.room.curtain,state.room.height-size.height);
+    }
+    function placeChairByDesk(chair,desk,room=state.room,items=state.items) {
+      const deskSize = footprint(desk), distance = desk.height/2+100+chair.height/2;
+      const candidates = [desk.angle,(desk.angle+180)%360].map(angle=>{
+        const candidate = {...chair,angle}, chairSize = footprint(candidate);
+        const cosine = [1,0,-1,0][angle/90], sine = [0,1,0,-1][angle/90];
+        candidate.x = Math.round(desk.x+deskSize.width/2-sine*distance-chairSize.width/2);
+        candidate.y = Math.round(desk.y+deskSize.height/2+cosine*distance-chairSize.height/2);
+        const zone = chairActivity(candidate);
+        const outside = zone.x<0 || zone.y<(room.curtain ?? 200) || zone.x+zone.width>room.width || zone.y+zone.height>room.height;
+        const score = (outside?100:0)+items.filter(item=>item.id!=='chair' && overlaps(zone,item)).length;
+        return {candidate,score};
+      });
+      candidates.sort((first,second)=>first.score-second.score);
+      Object.assign(chair,candidates[0].candidate);
+    }
+    function chairActivity(chair) {
+      const size = footprint(chair);
+      const width = chair.width+chair.sideClearance*2, depth = chair.height+100+chair.backClearance;
+      const cosine = [1,0,-1,0][chair.angle/90], sine = [0,1,0,-1][chair.angle/90];
+      const offset = (chair.backClearance-100)/2;
+      const zoneWidth = chair.angle%180 ? depth : width, zoneHeight = chair.angle%180 ? width : depth;
+      return {x:chair.x+size.width/2-sine*offset-zoneWidth/2,y:chair.y+size.height/2+cosine*offset-zoneHeight/2,width:zoneWidth,height:zoneHeight,angle:0};
+    }
+    function chairActivityIssues(chair) {
+      const zone = chairActivity(chair), room = state.room, messages = [];
+      if (zone.x<0 || zone.y<room.curtain || zone.x+zone.width>room.width || zone.y+zone.height>room.height) messages.push('儿童椅活动区超出可用空间');
+      state.items.filter(item=>item.id!=='chair').forEach(item=>{if(overlaps(zone,item)) messages.push(`儿童椅活动区被${item.name}占用`);});
+      if (blocksDoor(zone)) messages.push('儿童椅活动区与房门开启区冲突');
+      return messages;
+    }
+    function wardrobeStandingSpace(wardrobe) {
+      const size = footprint(wardrobe), depth = wardrobe.frontClearance;
+      const cosine = [1,0,-1,0][wardrobe.angle/90], sine = [0,1,0,-1][wardrobe.angle/90];
+      const distance = (wardrobe.height+depth)/2;
+      const width = wardrobe.angle%180 ? depth : wardrobe.width, height = wardrobe.angle%180 ? wardrobe.width : depth;
+      return {x:wardrobe.x+size.width/2+sine*distance-width/2,y:wardrobe.y+size.height/2-cosine*distance-height/2,width,height,angle:0};
+    }
+    function wardrobeStandingIssues(wardrobe) {
+      const zone = wardrobeStandingSpace(wardrobe), room = state.room, messages = [];
+      if (zone.x<0 || zone.y<room.curtain || zone.x+zone.width>room.width || zone.y+zone.height>room.height) messages.push('衣柜站立区超出可用空间');
+      state.items.filter(item=>item.id!=='wardrobe').forEach(item=>{if(overlaps(zone,item)) messages.push(`衣柜站立区被${item.name}占用`);});
+      if (blocksDoor(zone)) messages.push('衣柜站立区与房门开启区冲突');
+      const chair = state.items.find(item=>item.id==='chair');
+      if (chair && overlaps(zone,chairActivity(chair))) messages.push('衣柜站立区与椅子活动区重叠');
+      return messages;
+    }
+    function validState(value) {
+      if (!value || !value.room || !Array.isArray(value.items) || value.items.length !== defaults.items.length) return false;
+      const room = value.room;
+      if (!['width','height','bayLeft','bayRight','bay','curtain','door'].every(key => Number.isFinite(room[key]))) return false;
+      if (room.curtain < 0 || room.curtain > 1000 || room.height-room.curtain < 100) return false;
+      if (room.bayLeft < 0 || room.bayRight < 0 || room.width-room.bayLeft-room.bayRight < 100) return false;
+      if (room.width < 2000 || room.width > 10000 || room.height < 2000 || room.height > 10000 || room.bay < 0 || room.bay > 3000 || room.door < 600 || room.door > 2000 || !['bottom','right'].includes(room.doorWall)) return false;
+      return defaults.items.every(base => {
+        const item = value.items.find(entry => entry.id === base.id);
+        return item && ['width','height'].every(key => Number.isInteger(item[key]) && item[key]>=100 && item[key]<=10000) && [0,90,180,270].includes(item.angle) && Number.isFinite(item.x) && Number.isFinite(item.y) && fits(item,room);
+      });
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      if (Array.isArray(saved?.items) && !saved.items.some(item => item.id === 'cabinet')) {
+        saved.items.push(clone(defaults.items.find(item => item.id === 'cabinet')));
+      }
+      if (Array.isArray(saved?.items) && !saved.items.some(item => item.id === 'chair')) {
+        const chair = clone(defaults.items.find(item=>item.id==='chair'));
+        const desk = saved.items.find(item=>item.id==='desk');
+        if (desk && [0,90,180,270].includes(desk.angle)) placeChairByDesk(chair,desk,saved.room,saved.items);
+        saved.items.push(chair);
+      }
+      if (saved?.room && saved.room.curtain === undefined) saved.room.curtain = 200;
+      if (saved?.room && saved.room.bayLeft === undefined) {
+        if (saved.room.bayWidth === undefined) saved.room.bay = 600;
+        saved.room.bayLeft = 430;
+        saved.room.bayRight = 400;
+        delete saved.room.bayWidth;
+      }
+      if (validState(saved)) state = {room:saved.room,items:defaults.items.map(base => {
+        const savedItem = saved.items.find(item => item.id === base.id);
+        const extras = base.id==='chair' ? Object.fromEntries(['sideClearance','backClearance'].map(key=>[key,Number.isInteger(savedItem[key]) && savedItem[key]>=0 && savedItem[key]<=1500 ? savedItem[key] : base[key]])) : {};
+        return {...base,width:savedItem.width,height:savedItem.height,x:savedItem.x,y:savedItem.y,angle:savedItem.angle,...extras,...(base.id==='wardrobe'?{frontClearance:Number.isInteger(savedItem.frontClearance) && savedItem.frontClearance>=100 && savedItem.frontClearance<=1500 ? savedItem.frontClearance : 600}:{})};
+      })};
+    } catch { saveAvailable = false; }
+    state.items.forEach(contain);
+    function save() {
+      try { localStorage.setItem(storageKey,snapshot()); saveAvailable = true; }
+      catch { saveAvailable = false; }
+      byId('saveStatus').textContent = saveAvailable ? '布局已保存至此浏览器' : '浏览器存储不可用，关闭后布局将丢失';
+    }
+    function toast(message) {
+      clearTimeout(toastTimer);
+      byId('toast').textContent = message;
+      toastTimer = setTimeout(() => { byId('toast').textContent = ''; },2800);
+    }
+    function overlaps(first,second) {
+      const firstSize = footprint(first), secondSize = footprint(second);
+      return first.x < second.x+secondSize.width && first.x+firstSize.width > second.x && first.y < second.y+secondSize.height && first.y+firstSize.height > second.y;
+    }
+    function doorGeometry(room=state.room) {
+      const frame = 100, radius = room.door-frame*2;
+      return {frame,radius,hingeX:room.width-(room.doorWall==='bottom'?frame:0),hingeY:room.height-(room.doorWall==='right'?frame:0)};
+    }
+    function blocksDoor(item) {
+      const size = footprint(item), {radius,hingeX,hingeY} = doorGeometry();
+      if (item.x >= hingeX || item.y >= hingeY || item.x+size.width <= hingeX-radius || item.y+size.height <= hingeY-radius) return false;
+      const nearestX = clamp(hingeX,item.x,item.x+size.width);
+      const nearestY = clamp(hingeY,item.y,item.y+size.height);
+      return Math.hypot(nearestX-hingeX,nearestY-hingeY) < radius;
+    }
+    function warnings() {
+      const messages = [];
+      state.items.forEach((item,index) => {
+        state.items.slice(index+1).forEach(other => { if (overlaps(item,other)) messages.push(`${item.name}与${other.name}重叠`); });
+        if (blocksDoor(item)) messages.push(`${item.name}占用开门范围`);
+      });
+      const chair = state.items.find(item=>item.id==='chair');
+      if (chair) messages.push(...chairActivityIssues(chair));
+      const wardrobe = state.items.find(item=>item.id==='wardrobe');
+      if (wardrobe) messages.push(...wardrobeStandingIssues(wardrobe));
+      return messages;
+    }
+    function dimension(x1,y1,x2,y2,label,vertical=false,fontSize=75,color='#64756b') {
+      const centerX = (x1+x2)/2, centerY = (y1+y2)/2;
+      return `<g><path class="dimension" d="M${x1} ${y1}L${x2} ${y2}M${x1-22} ${y1-22}l44 44M${x2-22} ${y2-22}l44 44"/><text class="dim-text" style="font-size:${fontSize}px;fill:${color}" text-anchor="middle" transform="translate(${centerX+(vertical?-35:0)} ${centerY+(vertical?0:-34)})${vertical?' rotate(-90)':''}">${label}</text></g>`;
+    }
+    function freeIntervals(length,intervals) {
+      const free = [];
+      let cursor = 0;
+      intervals.map(([start,end]) => [clamp(start,0,length),clamp(end,0,length)]).sort((first,second) => first[0]-second[0]).forEach(([start,end]) => {
+        if (start > cursor) free.push([cursor,start]);
+        cursor = Math.max(cursor,end);
+      });
+      if (cursor < length) free.push([cursor,length]);
+      return free;
+    }
+    function curtainFreeSegments(room=state.room,items=state.items) {
+      if (!room.curtain) return [];
+      const occupied = items.filter(item => item.y <= room.curtain+1).map(item => [item.x,item.x+footprint(item).width]);
+      return freeIntervals(room.width,occupied);
+    }
+    function freeWallSegments(room=state.room,items=state.items) {
+      const blocked = {north:[],south:[],west:[],east:[]};
+      const lengths = {north:room.width,south:room.width,west:room.height,east:room.height};
+      if (room.curtain > 0) {
+        blocked.north.push([0,room.width]);
+        blocked.west.push([0,room.curtain]);
+        blocked.east.push([0,room.curtain]);
+      } else if (room.bay > 0) blocked.north.push([room.bayLeft,room.width-room.bayRight]);
+      const {radius,hingeX,hingeY} = doorGeometry(room);
+      blocked.south.push([room.doorWall==='bottom'?room.width-room.door:hingeX-radius,room.width]);
+      blocked.east.push([room.doorWall==='right'?room.height-room.door:hingeY-radius,room.height]);
+      items.forEach(item => {
+        const size = footprint(item);
+        if (item.y <= 1) blocked.north.push([item.x,item.x+size.width]);
+        if (room.height-item.y-size.height <= 1) blocked.south.push([item.x,item.x+size.width]);
+        if (item.x <= 1) blocked.west.push([item.y,item.y+size.height]);
+        if (room.width-item.x-size.width <= 1) blocked.east.push([item.y,item.y+size.height]);
+      });
+      return Object.fromEntries(Object.entries(blocked).map(([wall,intervals]) => [wall,freeIntervals(lengths[wall],intervals)]));
+    }
+    function wallGapDimensions() {
+      const room = state.room, segments = freeWallSegments();
+      return `<g id="wallGapDimensions" pointer-events="none">${Object.entries(segments).map(([wall,ranges]) => ranges.map(([start,end]) => {
+        const label = `空 ${fmt(end-start)}`;
+        const fontSize = Math.min(64,(end-start)/(label.length*.7));
+        const vertical = wall==='west' || wall==='east';
+        const markup = vertical
+          ? dimension(wall==='west'?-100:room.width+100,start,wall==='west'?-100:room.width+100,end,label,true,fontSize,'#226b54')
+          : dimension(start,wall==='north'?-room.bay-340:room.height+100,end,wall==='north'?-room.bay-340:room.height+100,label,false,fontSize,'#226b54');
+        return `<g data-wall-gap="${wall}" data-length="${end-start}" style="color:#226b54">${markup}</g>`;
+      }).join('')).join('')}</g>`;
+    }
+    function furnitureArt(item) {
+      const base = defaults.items.find(entry => entry.id === item.id);
+      if (item.id !== 'wardrobe' && (item.width !== base.width || item.height !== base.height)) {
+        return `<g transform="scale(${item.width/base.width} ${item.height/base.height})">${furnitureArt({...item,width:base.width,height:base.height})}</g>`;
+      }
+      const width = item.width, height = item.height;
+      if (item.id === 'bed') return `<rect x="60" y="60" width="${width-120}" height="${height-120}" rx="35" fill="#eef5ee" stroke="${item.stroke}" stroke-width="5"/><rect x="130" y="130" width="${width-260}" height="330" rx="55" fill="#fff" stroke="${item.stroke}" stroke-width="5"/><path d="M60 570H${width-60}M60 650H${width-60}" fill="none" stroke="${item.stroke}" stroke-width="6"/><path d="M110 ${height-230}H${width-110}" stroke="${item.stroke}" stroke-width="5"/>`;
+      if (item.id === 'desk') return `<path d="M40 ${height-100}H${width-40}" stroke="${item.stroke}" stroke-width="5"/><rect x="${width-390}" y="80" width="280" height="200" rx="12" fill="#fffcf4" stroke="${item.stroke}" stroke-width="5"/><rect x="120" y="75" width="370" height="240" rx="15" fill="#fffcf4" stroke="${item.stroke}" stroke-width="5"/><path d="M240 340h130" stroke="${item.stroke}" stroke-width="8"/>`;
+      if (item.id === 'cabinet') return `<rect x="30" y="30" width="${width-60}" height="${height-60}" rx="10" fill="none" stroke="${item.stroke}" stroke-width="5"/><path d="M30 95H${width-30}M${width/2-45} 60h90" fill="none" stroke="${item.stroke}" stroke-width="8"/>`;
+      if (item.id === 'chair') return `<rect x="35" y="35" width="${width-70}" height="${height-90}" rx="45" fill="#f5fbf8" stroke="${item.stroke}" stroke-width="8"/><rect x="20" y="${height-75}" width="${width-40}" height="55" rx="20" fill="${item.color}" stroke="${item.stroke}" stroke-width="10"/><path d="M15 100V${height-80}M${width-15} 100V${height-80}" stroke="${item.stroke}" stroke-width="10"/>`;
+      return `<g data-wardrobe-door="sliding"><path d="M15 18H${width-15}M15 50H${width-15}M${width/2} 60V${height-25}" fill="none" stroke="${item.stroke}" stroke-width="7"/><path d="M20 18H${width/2+25}M${width/2-25} 50H${width-20}" stroke="${item.stroke}" stroke-width="15"/><path d="M${width/2-55} 80v80m110-80v80" stroke="${item.stroke}" stroke-width="10"/></g>`;
+    }
+    function renderPlan() {
+      const {width,height,bayLeft,bay,curtain,door,doorWall} = state.room;
+      const bayRight = width-state.room.bayRight, bayWidth = bayRight-bayLeft;
+      const {frame,radius,hingeX,hingeY} = doorGeometry();
+      const dimensions = byId('showDimensions').checked;
+      const curtainGaps = curtainFreeSegments();
+      plan.setAttribute('viewBox',`-480 ${-bay-490} ${width+1000} ${height+bay+1000}`);
+      let markup = `<defs><pattern id="floor" width="240" height="600" patternUnits="userSpaceOnUse"><rect width="240" height="600" fill="#fffefa"/><path d="M0 0H240V600" fill="none" stroke="#eaece4" stroke-width="4"/></pattern><pattern id="curtainHatch" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="#f2e9e6"/><path d="M-10 10L10-10M0 50L50 0M40 60L60 40" stroke="#dcc7bf" stroke-width="5"/></pattern></defs>`;
+      if (bay > 0) markup += `<rect id="bayWindow" x="${bayLeft}" y="${-bay}" width="${bayWidth}" height="${bay}" fill="#e7f3f5" stroke="#93bcc3" stroke-width="14"/><path d="M${bayLeft} ${-bay+55}H${bayRight}M${bayLeft+55} ${-bay}V0M${bayRight-55} ${-bay}V0" stroke="#b7d4d9" stroke-width="9"/><text x="${bayLeft+bayWidth/2}" y="${-bay/2+25}" text-anchor="middle" fill="#5e8790" font-size="65">飘窗 · 深 ${fmt(bay)}</text>`;
+      markup += `<rect width="${width}" height="${height}" fill="url(#floor)"/><path d="M0 0V${height}H${doorWall==='bottom'?width-door:width}M${width} 0V${doorWall==='right'?height-door:height}" fill="none" stroke="#485d51" stroke-width="42" stroke-linecap="square"/>`;
+      markup += bay > 0 ? `<path d="M0 0H${bayLeft}M${bayRight} 0H${width}" stroke="#485d51" stroke-width="42"/><path d="M${bayLeft} 0H${bayRight}" stroke="#93bcc3" stroke-width="14"/>` : `<path d="M0 0H${width}" stroke="#485d51" stroke-width="42"/>`;
+      if (curtain > 0) markup += `<g id="curtainZone" pointer-events="none"><rect x="0" y="0" width="${width}" height="${curtain}" fill="url(#curtainHatch)"/><path d="M0 ${curtain}H${width}" stroke="#b08d7e" stroke-width="6" stroke-dasharray="22 16"/>${curtain>=100 && (!dimensions || !curtainGaps.length)?`<text x="${width/2}" y="${curtain/2+20}" text-anchor="middle" font-size="58" fill="#89675b" stroke="#f2e9e6" stroke-width="12" paint-order="stroke">北 · 窗帘预留 ${fmt(curtain)} mm</text>`:''}</g>`;
+      markup += `<g id="doorSwing" data-clear-width="${radius}"><path d="M${hingeX-radius} ${hingeY}A${radius} ${radius} 0 0 1 ${hingeX} ${hingeY-radius}L${hingeX} ${hingeY}Z" fill="#f4e6c9" fill-opacity=".48" stroke="#b19667" stroke-width="7" stroke-dasharray="22 18"/><path d="M${hingeX} ${hingeY}${doorWall==='bottom'?`V${hingeY-radius}`:`H${hingeX-radius}`}" stroke="#9c8255" stroke-width="17"/></g>`;
+      markup += doorWall==='bottom'
+        ? `<g id="doorFrames" fill="#9c8255"><rect x="${width-door}" y="${height-21}" width="${frame}" height="42"/><rect x="${width-frame}" y="${height-21}" width="${frame}" height="42"/></g>`
+        : `<g id="doorFrames" fill="#9c8255"><rect x="${width-21}" y="${height-door}" width="42" height="${frame}"/><rect x="${width-21}" y="${height-frame}" width="42" height="${frame}"/></g>`;
+      const chair = state.items.find(item=>item.id==='chair');
+      if (chair) {
+        const zone = chairActivity(chair), color = chairActivityIssues(chair).length ? '#ad453a' : '#498d81';
+        markup += `<g id="chairActivityZone" pointer-events="none"><rect x="${zone.x}" y="${zone.y}" width="${zone.width}" height="${zone.height}" rx="20" fill="${color}" fill-opacity=".08" stroke="${color}" stroke-width="8" stroke-dasharray="24 16"/><text x="${zone.x+zone.width/2}" y="${zone.y+zone.height-35}" text-anchor="middle" font-size="${Math.min(55,zone.width/9)}" fill="${color}">儿童椅活动区</text></g>`;
+      }
+      const wardrobe = state.items.find(item=>item.id==='wardrobe');
+      if (wardrobe) {
+        const zone = wardrobeStandingSpace(wardrobe), color = wardrobeStandingIssues(wardrobe).length ? '#ad453a' : '#7287a7';
+        markup += `<g id="wardrobeStandingZone" pointer-events="none"><rect x="${zone.x}" y="${zone.y}" width="${zone.width}" height="${zone.height}" fill="${color}" fill-opacity=".08" stroke="${color}" stroke-width="8" stroke-dasharray="20 16"/><text x="${zone.x+zone.width/2}" y="${zone.y+zone.height-30}" text-anchor="middle" font-size="${Math.min(58,zone.width/9)}" fill="${color}">站立取衣区</text></g>`;
+      }
+      state.items.forEach(item => {
+        const size = footprint(item), selected = item.id === selectedId;
+        const blocked = blocksDoor(item) || state.items.some(other => other.id !== item.id && overlaps(item,other));
+        const stroke = blocked ? '#bc5548' : selected ? '#226b54' : item.stroke;
+        markup += `<g class="furniture" data-id="${item.id}" tabindex="0" role="button" aria-label="${item.name}，${size.width}乘${size.height}毫米，旋转${item.angle}度" transform="translate(${item.x} ${item.y})"><rect class="footprint" width="${size.width}" height="${size.height}" rx="16" fill="${item.color}" stroke="${stroke}" stroke-width="${selected?14:7}"/><g transform="translate(${size.width/2} ${size.height/2}) rotate(${item.angle}) translate(${-item.width/2} ${-item.height/2})">${furnitureArt(item)}</g><text x="${size.width/2}" y="${size.height/2+(item.id==='bed'?120:8)}" text-anchor="middle" font-size="82" fill="#304b3d" stroke="${item.color}" stroke-width="15" paint-order="stroke">${item.name}</text>${dimensions?`<text class="item-dim" x="${size.width/2}" y="${size.height-55}" text-anchor="middle" stroke="${item.color}" stroke-width="12" paint-order="stroke">${fmt(size.width)} × ${fmt(size.height)}</text>`:''}${selected?`<circle cx="0" cy="0" r="23" fill="#fff" stroke="${stroke}" stroke-width="9"/><circle cx="${size.width}" cy="${size.height}" r="23" fill="#fff" stroke="${stroke}" stroke-width="9"/>`:''}</g>`;
+      });
+      if (dimensions) {
+        markup += dimension(0,-bay-210,width,-bay-210,fmt(width));
+        markup += dimension(-230,0,-230,height,fmt(height),true);
+        if (curtain) markup += dimension(width+230,0,width+230,curtain,fmt(curtain),true);
+        if (bay) {
+          if (bayLeft) markup += dimension(0,-bay-65,bayLeft,-bay-65,fmt(bayLeft));
+          markup += dimension(bayLeft,-bay-65,bayRight,-bay-65,`飘窗 ${fmt(bayWidth)}`);
+          if (state.room.bayRight) markup += dimension(bayRight,-bay-65,width,-bay-65,fmt(state.room.bayRight));
+          markup += dimension(bayRight+150,-bay,bayRight+150,0,fmt(bay),true);
+        }
+        if (doorWall==='bottom') markup += dimension(width-door,height+230,width,height+230,`门洞 ${fmt(door)} · 净 ${fmt(radius)}`,false,58);
+        else markup += dimension(width+230,height-door,width+230,height,`门洞 ${fmt(door)} · 净 ${fmt(radius)}`,true,58);
+        markup += wallGapDimensions();
+        if (wardrobe) {
+          const zone = wardrobeStandingSpace(wardrobe), vertical = wardrobe.angle%180===0;
+          markup += `<g id="wardrobeStandingDimensions" pointer-events="none">${vertical?dimension(zone.x+zone.width-20,zone.y,zone.x+zone.width-20,zone.y+zone.height,`站立 ${fmt(wardrobe.frontClearance)}`,true,Math.min(60,zone.height/9),'#7287a7'):dimension(zone.x,zone.y+30,zone.x+zone.width,zone.y+30,`站立 ${fmt(wardrobe.frontClearance)}`,false,Math.min(60,zone.width/9),'#7287a7')}</g>`;
+        }
+        if (chair) {
+          const zone = chairActivity(chair);
+          markup += `<g id="chairActivityDimensions" pointer-events="none">${dimension(zone.x,zone.y+zone.height+85,zone.x+zone.width,zone.y+zone.height+85,`活动 ${fmt(zone.width)}`,false,Math.min(60,zone.width/9),'#498d81')}${dimension(zone.x+zone.width-20,zone.y,zone.x+zone.width-20,zone.y+zone.height,fmt(zone.height),true,Math.min(60,zone.height/5),'#498d81')}</g>`;
+        }
+        markup += `<g id="curtainGapDimensions" pointer-events="none">${curtainGaps.map(([start,end]) => {
+          const label = `窗帘前空 ${fmt(end-start)}`;
+          const fontSize = Math.min(64,curtain/3,(end-start)/(label.length*.75));
+          return `<g data-curtain-gap="${end-start}">${dimension(start,curtain-20,end,curtain-20,label,false,fontSize,'#226b54')}</g>`;
+        }).join('')}</g>`;
+      }
+      markup += `<text x="0" y="${height+420}" font-size="60" fill="#7c8d82">主体 ${fmt(width)} × ${fmt(height)} mm</text>`;
+      plan.innerHTML = markup;
+      plan.querySelectorAll('.furniture').forEach((group,index) => {
+        const size = footprint(state.items[index]);
+        group.querySelector(':scope > text').style.fontSize = `${Math.min(82,size.width/4,size.height/4)}px`;
+        const label = group.querySelector('.item-dim');
+        if (label) label.style.fontSize = `${Math.min(61,size.width/(label.textContent.length*.65),size.height/5)}px`;
+      });
+    }
+    const icons = {
+      bed:'<path d="M3 18v-9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9M3 12h18M3 18v3m18-3v3M7 7V4h10v3"/>',
+      desk:'<path d="M3 9h18M5 9v12m14-12v12M7 9V3h10v6M5 14h14"/>',
+      wardrobe:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M12 3v18m-3-12v3m6-3v3"/>',
+      cabinet:'<rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 10h16m-10-3h4M6 19v2m12-2v2"/>',
+      chair:'<path d="M6 13V4h12v9M4 13h16v5H4zm2 5v4m12-4v4M6 9h12"/>'
+    };
+    function renderList() {
+      byId('furnitureCount').textContent = `${state.items.length} 件`;
+      byId('furnitureList').innerHTML = state.items.map(item => `<button class="furniture-option" data-select="${item.id}" aria-pressed="${item.id===selectedId}"><span class="swatch" style="background:${item.color};color:${item.stroke}"><svg viewBox="0 0 24 24">${icons[item.id]}</svg></span><span class="item-copy"><strong>${item.name}</strong><small>${item.width/10} × ${item.height/10} cm</small></span></button>`).join('');
+    }
+    function renderProperties() {
+      const item = current(), size = footprint(item), room = state.room;
+      byId('selectedName').textContent = item.name;
+      byId('angleTag').textContent = `${item.angle}°`;
+      byId('wardrobeStandingControl').hidden = item.id !== 'wardrobe';
+      if (item.id==='wardrobe') {
+        byId('wardrobeFrontClearance').value = item.frontClearance;
+        byId('wardrobeFacing').textContent = ['朝北','朝东','朝南','朝西'][item.angle/90];
+      }
+      const chair = state.items.find(entry=>entry.id==='chair');
+      byId('chairActivityControl').hidden = !chair || !['chair','desk'].includes(item.id);
+      if (chair) {
+        byId('chairActivitySize').textContent = `${fmt(chair.width+chair.sideClearance*2)} × ${fmt(chair.height+100+chair.backClearance)} mm`;
+        byId('chairSideClearance').value = chair.sideClearance;
+        byId('chairBackClearance').value = chair.backClearance;
+      }
+      byId('selectedWidth').value = size.width;
+      byId('selectedHeight').value = size.height;
+      byId('selectedWidth').max = room.width;
+      byId('selectedHeight').max = room.height-room.curtain;
+      byId('positionX').value = item.x;
+      byId('positionY').value = item.y;
+      byId('positionY').min = room.curtain;
+      byId('positionX').max = room.width-size.width;
+      byId('positionY').max = room.height-size.height;
+      byId('clearances').innerHTML = [['左侧',item.x],['右侧',room.width-item.x-size.width],['上侧',item.y],['下侧',room.height-item.y-size.height]].map(([name,value]) => `<span>${name}<b>${fmt(value)} mm</b></span>`).join('');
+      const wallNames = {north:'北墙',south:'南墙',west:'西墙',east:'东墙'};
+      byId('wallGaps').innerHTML = Object.entries(freeWallSegments()).map(([wall,ranges]) => `<div><span>${wallNames[wall]}</span><strong>${ranges.length?ranges.map(([start,end])=>fmt(end-start)).join(' / '):wall==='north' && room.curtain>0?'窗帘预留，无可用墙段':'无可用墙段'}</strong></div>`).join('');
+      const curtainGaps = curtainFreeSegments();
+      byId('curtainGapSummary').hidden = !room.curtain;
+      byId('curtainGapSummary').textContent = `北面窗帘前空余：${curtainGaps.length?curtainGaps.map(([start,end])=>`${fmt(end-start)} mm`).join(' / '):'无空档'}`;
+      const messages = warnings();
+      byId('warnings').textContent = messages.join('；');
+      byId('layoutStatus').textContent = messages.length ? `${messages.length} 项布局冲突` : '无重叠 · 开门、站立及椅子活动区畅通';
+      byId('layoutStatus').style.color = messages.length ? 'var(--red)' : 'var(--green)';
+      byId('undoButton').disabled = !history.length;
+    }
+    function render() { renderPlan(); renderList(); renderProperties(); }
+    function syncRoom() {
+      const room = state.room;
+      byId('roomSize').textContent = `${(room.width/1000).toFixed(2)} × ${(room.height/1000).toFixed(2)} m`;
+      byId('roomArea').textContent = `主体面积 ${(room.width*room.height/1000000).toFixed(2)} m²`;
+      byId('planSubtitle').textContent = `${fmt(room.width)} × ${fmt(room.height)} mm · 北面窗帘 ${fmt(room.curtain)} mm`;
+      Object.entries(room).forEach(([key,value]) => { byId('roomForm').elements.namedItem(key).value = value; });
+      updateBayWidth();
+    }
+    function select(id) { selectedId = id; render(); }
+    function rotate() {
+      const item = current(), before = snapshot(), size = footprint(item);
+      if (!fits({...item,angle:(item.angle+90)%360})) {
+        toast('旋转后超出可用空间，请先缩小家具尺寸');
+        return;
+      }
+      const centerX = item.x+size.width/2, centerY = item.y+size.height/2;
+      item.angle = (item.angle+90)%360;
+      const next = footprint(item);
+      item.x = centerX-next.width/2;
+      item.y = centerY-next.height/2;
+      contain(item);
+      remember(before); render(); save();
+    }
+    function point(event) {
+      return new DOMPoint(event.clientX,event.clientY).matrixTransform(plan.getScreenCTM().inverse());
+    }
+    plan.addEventListener('pointerdown',event => {
+      if (event.button !== 0 || drag) return;
+      const target = event.target.closest('[data-id]');
+      if (!target) return;
+      selectedId = target.dataset.id;
+      drag = {pointer:event.pointerId,start:point(event),x:current().x,y:current().y,before:snapshot()};
+      plan.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      render();
+    });
+    plan.addEventListener('pointermove',event => {
+      if (!drag || event.pointerId !== drag.pointer) return;
+      const position = point(event), item = current(), step = byId('snap').checked ? 50 : 1;
+      item.x = Math.round((drag.x+position.x-drag.start.x)/step)*step;
+      item.y = Math.round((drag.y+position.y-drag.start.y)/step)*step;
+      contain(item); renderPlan(); renderProperties();
+    });
+    function endDrag(event) {
+      if (!drag || event.pointerId !== drag.pointer) return;
+      const previous = drag.before;
+      drag = null;
+      remember(previous); renderProperties(); save();
+    }
+    plan.addEventListener('pointerup',endDrag);
+    plan.addEventListener('pointercancel',endDrag);
+    plan.addEventListener('lostpointercapture',endDrag);
+    plan.addEventListener('keydown',event => {
+      const target = event.target.closest('[data-id]');
+      if (!target) return;
+      selectedId = target.dataset.id;
+      if (event.key==='Enter' || event.key===' ') {
+        event.preventDefault(); select(selectedId);
+        plan.querySelector(`[data-id="${selectedId}"]`).focus();
+        return;
+      }
+      const moves = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+      if (!moves[event.key]) return;
+      event.preventDefault();
+      const before = snapshot(), item = current(), [deltaX,deltaY] = moves[event.key], step = event.shiftKey ? 10 : 50;
+      item.x += deltaX*step; item.y += deltaY*step; contain(item);
+      remember(before); render(); save();
+      plan.querySelector(`[data-id="${selectedId}"]`).focus();
+    });
+    byId('furnitureList').addEventListener('click',event => { const button = event.target.closest('[data-select]'); if (button) select(button.dataset.select); });
+    byId('rotateButton').addEventListener('click',rotate);
+    ['chairSideClearance','chairBackClearance'].forEach((id,index)=>byId(id).addEventListener('change',event=>{
+      const chair = state.items.find(item=>item.id==='chair'), value = Number(event.target.value), before = snapshot();
+      if (!chair) return;
+      if (!event.target.value.trim() || !Number.isInteger(value) || value<0 || value>1500) {
+        toast('活动净空须为 0 至 1500 mm 的整数'); renderProperties(); return;
+      }
+      chair[index?'backClearance':'sideClearance'] = value;
+      remember(before); render(); save();
+    }));
+    ['selectedWidth','selectedHeight'].forEach((id,index) => byId(id).addEventListener('change',event => {
+      const value = Number(event.target.value), item = current(), before = snapshot();
+      const key = (index === 0) !== (item.angle % 180 !== 0) ? 'width' : 'height';
+      if (!event.target.value.trim() || !Number.isInteger(value) || value < 100 || value > 10000 || !fits({...item,[key]:value})) {
+        toast('尺寸须为至少 100 mm 的整数，且不能超出可用空间');
+        renderProperties();
+        return;
+      }
+      item[key] = value;
+      contain(item); remember(before); render(); save();
+    }));
+    byId('wardrobeFrontClearance').addEventListener('change',event => {
+      if (current().id !== 'wardrobe') return;
+      const before = snapshot(), value = Number(event.target.value);
+      if (!event.target.value.trim() || !Number.isInteger(value) || value<100 || value>1500) {
+        toast('站立净空须为 100 至 1500 mm 的整数'); renderProperties(); return;
+      }
+      current().frontClearance = value;
+      remember(before); render(); save();
+    });
+    ['positionX','positionY'].forEach((id,index) => byId(id).addEventListener('change',event => {
+      const before = snapshot(), value = Number(event.target.value);
+      if (event.target.value.trim() && Number.isFinite(value)) current()[index?'y':'x'] = value;
+      contain(current()); remember(before); render(); save();
+    }));
+    byId('showDimensions').addEventListener('change',renderPlan);
+    byId('undoButton').addEventListener('click',() => { if (!history.length) return; state = JSON.parse(history.pop()); syncRoom(); render(); save(); });
+    byId('resetButton').addEventListener('click',() => {
+      if (!confirm('重置家具位置？房间及家具尺寸将保留。')) return;
+      const before = snapshot();
+      state.items = defaults.items.map(base => {
+        const item = state.items.find(entry => entry.id === base.id);
+        const reset = {...item,x:base.x,y:base.y,angle:base.angle};
+        if (!fits(reset)) reset.angle = item.angle;
+        return reset;
+      });
+      state.items.forEach(contain);
+      remember(before); render(); save(); toast('家具位置已重置');
+    });
+    function updateBayWidth() {
+      const fields = byId('roomForm').elements;
+      fields.namedItem('bayWidth').value = Number(fields.namedItem('width').value)-Number(fields.namedItem('bayLeft').value)-Number(fields.namedItem('bayRight').value);
+    }
+    byId('roomForm').addEventListener('input',updateBayWidth);
+    byId('roomForm').addEventListener('submit',event => {
+      event.preventDefault();
+      const data = new FormData(event.target), before = snapshot();
+      if (Number(data.get('width'))-Number(data.get('bayLeft'))-Number(data.get('bayRight')) < 100) {
+        toast('左右墙距之和须小于主体宽度，且窗宽至少为 100 mm');
+        return;
+      }
+      const nextRoom = {width:Number(data.get('width')),height:Number(data.get('height')),bayLeft:Number(data.get('bayLeft')),bayRight:Number(data.get('bayRight')),bay:Number(data.get('bay')),curtain:Number(data.get('curtain')),door:Number(data.get('door')),doorWall:data.get('doorWall')};
+      if (state.items.some(item => !fits(item,nextRoom))) {
+        toast('调整后的房间放不下现有家具，请先缩小家具尺寸');
+        return;
+      }
+      state.room = nextRoom;
+      state.items.forEach(contain); remember(before); syncRoom(); render(); save(); toast('房间尺寸已更新');
+    });
+    byId('exportButton').addEventListener('click',() => {
+      const exported = plan.cloneNode(true);
+      exported.querySelectorAll('[tabindex]').forEach(element => element.removeAttribute('tabindex'));
+      const style = document.createElementNS('http://www.w3.org/2000/svg','style');
+      style.textContent = '.dimension{fill:none;stroke:#85968c;stroke-width:5}.dim-text{font-size:75px;fill:#64756b;paint-order:stroke;stroke:#f3f5f4;stroke-width:22px;stroke-linejoin:round}.item-dim{font-size:61px;fill:#385549}text{font-family:Microsoft YaHei,sans-serif}';
+      exported.prepend(style);
+      exported.setAttribute('width','1200'); exported.setAttribute('height','1600');
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(exported)],{type:'image/svg+xml;charset=utf-8'}));
+      const link = document.createElement('a'); link.href = url; link.download = 'room-layout.svg'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url),1000); toast('平面图已导出为 SVG');
+    });
+    syncRoom(); render();
+    byId('saveStatus').textContent = saveAvailable ? '本地自动保存' : '浏览器存储不可用，关闭后布局将丢失';
+  </script>
+</body>
+</html>
